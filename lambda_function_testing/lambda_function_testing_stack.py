@@ -16,7 +16,7 @@ class LambdaFunctionTestingStack(Stack):
         webhook_lambda_function = _lambda.Function(
             self, "WebhookLambdaFunction",
             runtime=_lambda.Runtime.PYTHON_3_11,
-            handler='webhook_lambda_function.handler',
+            handler='lambda_function.lambda_handler',
             code=_lambda.Code.from_asset('lambda_function')
         )
         
