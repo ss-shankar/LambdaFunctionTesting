@@ -10,32 +10,42 @@ producer = KafkaProducer(
     key_serializer=lambda v: v.encode('utf-8'),
     acks=1,  # To reduce wait time for acknowledgments
     retries=5,  # Number of retry attempts for sending messages
-    linger_ms=10  # Time to wait for batching messages (can be adjusted)
+    linger_ms=10,  # Time to wait for batching messages (can be adjusted)
+    api_version=(2,0,2), # Current Kafka API Version shoube be a tuple
 )
 
 def lambda_handler(event, context):
     try:
         # Extract data from the incoming event
+        print("Starting request")
         device_data_list = json.loads(event['body'])
+        print(device_data_list)
         
         # Ensure the data is a list
         if not isinstance(device_data_list, list):
             raise ValueError("JSON must be an array of data")
 
         # Iterate through each device data in the array
+        print("staring for loop")
         for device_data in device_data_list:
+            print(device_data)
             # Ensure 'uniqueId' is present in each JSON object
             if 'uniqueId' not in device_data:
                 raise ValueError("Each JSON object must contain 'uniqueId'")
             
             # Transform data
+            print("starting transform_data inside for loop")
             transformed_data = transform_data(device_data)
             
+            
             # Send data to Kafka
+            print("config producer")
             future = producer.send('device.activity.NewCan', partition=0, key='alldata', value=transformed_data)
             
             # Get metadata to ensure the message was sent
+            print("adding metadata")
             record_metadata = future.get(timeout=10)
+        print("ending for loop")
 
     except KafkaError as e:
         # Handle Kafka errors
@@ -55,8 +65,10 @@ def lambda_handler(event, context):
                 'error': str(e)
             })
         }
-        
+    
+    print("Waiting to push data to kafka")    
     producer.flush()
+    print("Message successfully pushed to kafka")
     
     return {
         'statusCode': 200,
